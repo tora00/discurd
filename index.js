@@ -18,18 +18,30 @@ app.get('/io.js', function(req,res){
 });
 
 io.on('connection', function(socket){
+  let nickname = "";
+  //Query connected client for cookie existence
+  socket.emit('fetch cookie', nickname);
+  socket.on('receive cookie', function(msg){
+    if(msg===""){
+      let chance = new Chance();
+      nickname = chance.animal()
+      
+    }
+    else{
+      nickname = msg;
+    }
+    //Echo nickname back to caller
+    console.log("Naming new connection as: " + nickname);
+    socket.emit('set nickname', nickname);
 
-  //name new connection and log into console and set on html
-  let chance = new Chance();
-  let nickname = chance.animal()
-  console.log("Naming new connection as: " + nickname);
-  socket.emit('set nickname', nickname);
+    //push current user identified by the socket id and the nickname and update user list client-side
+    users.push({socket_id:socket.id, socket_nickname:nickname, socket_nickname_color:"#000000"});
+    io.emit('update userlist', users);
 
-  //push current user identified by the socket id and the nickname and update user list client-side
-  users.push({socket_id:socket.id, socket_nickname:nickname, socket_nickname_color:"#000000"});
-  io.emit('update userlist', users);
+  });  
 
   //load chat history on initial user connection
+  console.log("Loading chatlog for "+nickname);
   socket.emit('load chatlog', stack);
   
   //On client disconnect, log users into console, update online user list
